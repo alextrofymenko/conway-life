@@ -1,5 +1,6 @@
 from graphics import *
 import random
+import itertools
 
 ## Written by Sarina Canelake & Kelly Casteel, August 2010
 ## Revised January 2011
@@ -8,10 +9,10 @@ import random
 # GLOBAL VARIABLES
 ############################################################
     
-BLOCK_SIZE = 40
-BLOCK_OUTLINE_WIDTH = 2
-BOARD_WIDTH = 12
-BOARD_HEIGHT = 12
+BLOCK_SIZE = 20
+BLOCK_OUTLINE_WIDTH = 1
+BOARD_WIDTH = 30
+BOARD_HEIGHT = 30
 
 neighbor_test_blocklist = [(0,0), (1,1)]
 toad_blocklist = [(4,4), (3,5), (3,6), (5,7), (6,5), (6,6)]
@@ -160,7 +161,7 @@ class Board(object):
         self.win = win
         # self.delay is the number of ms between each simulation. Change to be
         # shorter or longer if you wish!
-        self.delay = 1000
+        self.delay = 100
 
         # create a canvas to draw the blocks on
         self.canvas = CanvasFrame(win, self.width * BLOCK_SIZE,
@@ -181,7 +182,8 @@ class Board(object):
         self.block_list = {}
 
         ####### YOUR CODE HERE ######
-        raise Exception("__init__ not implemented")
+        for x,y in list(itertools.product(range(0, self.width), range(0, self.height))):
+            self.block_list[(x,y)] = Block(Point(x,y), 'blue')
 
 
     def draw_gridline(self, startp, endp):
@@ -217,8 +219,8 @@ class Board(object):
         '''
 
         #### YOUR CODE HERE #####
-        raise Exception("seed not implemented")
-    
+        for coords in block_coords:
+            self.block_list[coords].set_live(self.canvas)
 
 
     def get_block_neighbors(self, block):
@@ -228,8 +230,14 @@ class Board(object):
         '''
         #### YOUR CODE HERE #####
         #### Think about edge conditions!
-        raise Exception("get_block_neighbors not implemented")
-       
+        neighbours = set()
+        for x in [-1, 0, 1]:
+            for y in [-1, 0, 1]:
+                neighbours.add(self.block_list.get((block.x + x, block.y + y), block))
+
+        # Remove the input block from set
+        neighbours = neighbours - set([block])
+        return list(neighbours)
 
     def simulate(self):
         '''
@@ -246,9 +254,19 @@ class Board(object):
         '''
 
         #### YOUR CODE HERE #####
-        raise Exception("simulate not implemented")
+        for block in self.block_list.values():
+            neighbours = self.get_block_neighbors(block)
+            num_live_neighbours = sum(1 for n in neighbours if n.is_live())
 
-        
+            if (block.is_live()):
+                if (num_live_neighbours < 2 or num_live_neighbours > 3):
+                    block.new_status = 'dead'
+            else:
+                if (num_live_neighbours == 3):
+                    block.new_status = 'live'
+
+        for block in self.block_list.values():
+            block.reset_status(self.canvas)
 
     def animate(self):
         '''
@@ -270,11 +288,11 @@ if __name__ == '__main__':
     board = Board(win, BOARD_WIDTH, BOARD_HEIGHT)
 
     ## PART 1: Make sure that the board __init__ method works    
-    board.random_seed(.15)
+    # board.random_seed(.15)
 
     ## PART 2: Make sure board.seed works. Comment random_seed above and uncomment
     ##  one of the seed methods below
-    # board.seed(toad_blocklist)
+    # board.seed(diehard_blocklist)
 
     ## PART 3: Test that neighbors work by commenting the above and uncommenting
     ## the following two lines:
@@ -283,12 +301,12 @@ if __name__ == '__main__':
 
 
     ## PART 4: Test that simulate() works by uncommenting the next two lines:
-    # board.seed(toad_blocklist)
+    board.seed(diehard_blocklist)
     # win.after(2000, board.simulate)
 
     ## PART 5: Try animating! Comment out win.after(2000, board.simulate) above, and
     ## uncomment win.after below.
-    # win.after(2000, board.animate)
+    win.after(2000, board.animate)
 
     ## Yay, you're done! Try seeding with different blocklists (a few are provided at the top of this file!)
     
